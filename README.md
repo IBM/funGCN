@@ -64,7 +64,7 @@ The implemented methodology is described in the following papers:
 2) clone FASTEN2 (main branch)
 3) install FASTEN2 and required packages by running ```pip install -e .``` 
 at the root of the repository, i.e. where the setup.py file is.
-4) Lunch the desired experiments, e.g., `python expes/ffs/sim_fsfc_iterator.py`
+4) Lunch the desired experiments, e.g., `python expes/ffs/sim_FF.py`
 
 **For Apple M processors' users:**
 * To install `numpy` with the apple library `vecLib` (which is optimized for Apple processors) run:
