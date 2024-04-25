@@ -1,4 +1,4 @@
-# FunGCN
+# funGCN
 
 ### Functional Graph Convolutional Networks and Feature Selection
 
@@ -61,8 +61,8 @@ The implemented methodology is described in the following papers:
 ### REQUIREMENTS
 
 1) Create a python3.11 environment: `conda create -n my_env python=3.11`
-2) clone FASTEN2 (main branch)
-3) install FASTEN2 and required packages by running ```pip install -e .``` 
+2) clone FunGCN (main branch)
+3) install FunGCN and required packages by running ```pip install -e .``` 
 at the root of the repository, i.e. where the setup.py file is.
 4) Lunch the desired experiments, e.g., `python expes/ffs/sim_FF.py`
 
