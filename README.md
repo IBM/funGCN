@@ -61,15 +61,15 @@ The implemented methodology is described in the following papers:
 ### REQUIREMENTS
 
 1) Create a python3.11 environment: `conda create -n my_env python=3.11`
-2) clone FunGCN (main branch)
-3) install FunGCN and required packages by running ```pip install -e .``` 
+2) clone funGCN (main branch)
+3) install funGCN and required packages by running `pip install -e .` 
 at the root of the repository, i.e. where the setup.py file is.
 4) Lunch the desired experiments, e.g., `python expes/ffs/sim_FF.py`
 
 **For Apple M processors' users:**
 * To install `numpy` with the apple library `vecLib` (which is optimized for Apple processors) run:
-   ```dockerfile
-  pip install cython pybind11
-  pip install numpy cython
-  ```
+    ```
+    pip install cython pybind11
+    pip install numpy cython
+    ```
    

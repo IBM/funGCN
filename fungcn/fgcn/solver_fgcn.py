@@ -22,74 +22,6 @@ import matplotlib.pyplot as plt
 
 
 class FunGCN(torch.nn.Module):
-    """
-    Class to define the Functional Graph Convolutional Network models
-
-    Methods:
-        standardize_X: standardizes design matrix
-        compute_categories_embeddings: computes embeddings for categorical data
-        compute_graph_embeddings: computes embeddigns for the the knowledge graph creation
-        find_forecast_domain: divides the time and the basis coefficients into past and horizon
-        compute_gcn_embeddings: computes embeddigns for the GCN model
-        update_embeddings: compute and update (if necessary) all the embeddings, calling compute_graph_embeddings and
-            compute_gcn_embeddings
-        split_data_train_validation_test: splits the data into train, validation, and test set
-        standardize_data: standardizes data train, validation, and test sets
-        isolate_target_from_data: remove the target information Y from the design matrix X
-        preprocess_data: calls all the functions above to preprocess the data
-        graph_estimation: implements a node-wise feature selection approach to estimate the graph. FASTEN feature
-            selection is performed
-        preprocess_adjacency_matrix: takes the output of graph_estimation and preprocess it for the GCN module
-        initialize_gcn_module: initialization of the graph convolutional network model
-        train_model: trains the GCN
-        retrieve_original_form: starting from the embedded forms, recovers the original form for the GCN outcomes
-        compute_evaluation_metrics: computes the evaluation metrics on the original feature space
-        predict: predict new observations (or the test set) using the trained model
-        print_prediction_metrics: print the evaluation metrics computed on the new observations (or the test set)
-        plot_true_vs_predicted: plots the truth and predicted longitudinal features
-
-    Attributes:
-        X_gcn: (nobs, nvar, k_gcn) embedded array for GCN
-        X_gcn_test: (nobs_test, nvar, k_gcn) embedded array for the GCN testing
-        X_gcn_test: (nobs_train, nvar, k_gcn) embedded array for the GCN training
-        X_gcn_test: (nobs_val, nvar, k_gcn) embedded array for the GCN validation
-        X_graph: (nvar, nobs, k_graph) embedded array for graph estimation
-        X_graph_train: (nvar_train, nobs, k_graph) embedded array with observations used for graph_estimation
-        accuracy_test (dict): keys are categorical targets and values are accuracy on the test sets
-        adjacency (nvar, nvar): adjancency matrix
-        adjusted_start_forecast: position of the first basis in the forecasting domain
-        basis_gcn: basis used to represents the longitudinal features for gcn
-        basis_graph: basis used to represents the longitudinal features for graph estimation
-        data: input data, array of dimensions (nvar, nobs, ntimes)
-        edge_index: list of the graph edges
-        edge_weigths: list of the graph weights
-        forecast_ratio: portion of prediction with respect to the total domain if the task is forecasting
-        k_gcn_in: number of coefficients of the GCN input
-        k_gcn_out: number of coefficients of the GCN output
-        k_graph: number of coefficients for graph estimation
-        loss_train: loss on the training set
-        loss_val: loss on the validation set
-        mean_vec_gcn: vector with the original features means, used to reconstruct the orginal features
-        model: the gcn model
-        nedges: number of edges for each node of the graph
-        rmse_test (dict): keys are longitudinal/scalar targets and values are the rmse on the test sets
-        start_forecsat: time at which the forecasting starts
-        std_rmse_test (dict): keys are longitudinal/scalar targets and values are the standardized rmse on the test sets
-        std_vec_gcn: vector with the original features standard deviations, used to reconstruct the orginal features
-        test_ind: index of the test set
-        train_ind: index of the training set
-        val_ind: index of the validation set
-        var_modality: list of modalities for each variables; possible values: 'f', 'c', 's'
-        verbose: if true, the output is printed
-        y_gcn_train: targets for the gcn restricted on the train set
-        y_gcn_val: targets for the gcn restricted on the validation set
-        y_ind: list containing the indeces of the target variables
-        y_test_hat_embedded: estimated features on the test set and in the embedded space
-        y_test_hat_os: estimated features on the test set and retransformed in the original space
-        y_train_hat_embedded: estimated features on the trian set and in the embedded space
-        y_val_hat_embedded: estimated features on the validation set and in the embedded space
-
-    """
 
     def __init__(self, data, y_ind, var_modality=None, verbose=1):
         super().__init__()
@@ -131,22 +63,18 @@ class FunGCN(torch.nn.Module):
 
     def standardize_X(self, X):
         """
-        Standardizes the input matrix X by subtracting the mean and dividing by the standard deviation of each feature.
+        Standardize the design matrix.
 
-        Parameters:
-        X (numpy.ndarray): A 2D numpy array where each row represents a feature and each column represents an
-            observation.
+        This function subtracts the mean and divides by the standard deviation for each column,
+        resulting in columns with a mean of 0 and a standard deviation of 1.
 
-        Returns:
-        tuple:
-            Xstd (numpy.ndarray): The standardized data matrix.
-            mean_vec (numpy.ndarray): The vector of means of each feature.
-            std_vec (numpy.ndarray): The vector of standard deviations of each feature.
+        Inputs:
+            X (numpy array): Input data, shape
 
-        Description:
-        This function computes the mean and standard deviation for each feature (i.e., row) of the input matrix X.
-        It then standardizes each feature by subtracting its mean and dividing by its standard deviation.
-        A small constant (1e-32) is added to the standard deviation before division to prevent division by zero.
+        Outputs:
+            Xstd (numpy array): Standardized data, shape
+            mean_vec (numpy array): Mean vector, shape (n_features, 1)
+            std_vec (numpy array): Standard deviation vector, shape (n_features, 1)
         """
 
         # Calculate the mean for each feature
@@ -162,6 +90,21 @@ class FunGCN(torch.nn.Module):
         # return X, np.zeros(mean_vec.shape), np.ones(std_vec.shape)
 
     def compute_categories_embeddings(self, x, k):
+        """
+        Computes embeddings for categorical variables.
+
+        This function creates an embedding layer for a given set of categorical variable values, `x`,
+        using a specified embedding dimension, `k`. Each category is represented as a dense vector
+        of dimension `k`. The function initializes an embedding layer, applies it to the input data,
+        and returns the resulting embeddings as a numpy array.
+
+        Inputs:
+            x (numpy array): Categorical data, shape (n_samples,)
+            k (int): Embedding dimension
+
+        Outputs:
+            embeddings (numpy array): Category embeddings, shape (n_samples, k)
+        """
 
         n_val = np.max(np.round(x)).astype(int) + 2
         embedding_layer = torch.nn.Embedding(num_embeddings=n_val, embedding_dim=k)
@@ -169,25 +112,22 @@ class FunGCN(torch.nn.Module):
 
     def compute_graph_embeddings(self, k, data=None, var_modality=None):
         """
-        Computes graph embeddings for data based on variable modalities.
+        Computes embeddings for graph data based on variable modality.
 
-        Parameters:
-        k (int): The number of dimensions for the embeddings.
-        data (numpy.ndarray, optional): A 3D array where the first dimension represents features, the second dimension
-            represents observations, and the third dimension represents data points. If None, defaults to self.data.
-        var_modality (list, optional): A list indicating the modality of each variable ('c' for categorical).
-            If None, defaults to self.var_modality.
+        This function processes a dataset to compute embeddings for each feature.
+        For categorical features, it computes category embeddings. For other types of variables,
+        it computes embeddings based on the eigenfunctions of the data matrix. This method allows
+        the handling of mixed data types within a single framework.
 
-        Returns:
-        tuple: A tuple containing:
-            X (numpy.ndarray): The computed embeddings for each feature across all observations.
-            basis_x (numpy.ndarray): The basis used for non-categorical data embeddings.
-            k (int): The embedding dimensionality, returned for reference.
+        Inputs:
+            k (int): Embedding dimension
+            data (numpy array, optional): Input data, shape (n_features, n_samples, n_points)
+            var_modality (list, optional): List of variable modalities (categorical or non-categorical)
 
-        Description:
-        This method handles different types of variable modalities. For categorical data, it computes embeddings using
-        a dedicated method. For other types, it uses eigen-decomposition to create basis functions and project the
-        original data into a lower-dimensional space defined by the top k eigenvectors.
+        Outputs:
+            X (numpy array): Graph embeddings, shape (n_features, n_samples, k)
+            basis_x (numpy array): Basis array for non-categorical data, shape (n_features, n_points, k)
+            k (int): Embedding dimension
         """
 
         if data is None:
@@ -203,7 +143,7 @@ class FunGCN(torch.nn.Module):
 
         for i in range(nfeat):  # Iterate over each feature
             if var_modality[i] == 'c':
-                # Compute embeddings for categorical data
+                # Compute embeddings for categorical data using compute_categories_embeddings function
                 X[i, :, :] = self.compute_categories_embeddings(data[i, :, 0], k)
             else:
                 # Compute embeddings for non-categorical data using eigen-decomposition
@@ -215,28 +155,28 @@ class FunGCN(torch.nn.Module):
 
     def find_forecast_domain(self, k, forecast_ratio, npoints, degree):
         """
-        Calculates the domains for historical and forecast data based on the provided forecast ratio.
+        Find the forecast domain for a given set of parameters.
 
-        Parameters:
-        k (int): Total number of knots.
-        forecast_ratio (float): The proportion of the point series to be used for forecasting.
-        npoints (int): Total number of points in the data series.
-        degree (int): Degree of the splines used in the model.
+        The function calculates the starting index for the forecast based on the forecast ratio,
+        defines the full grid of points, and calculates the number of interior knots.
+        It then generates knots evenly spaced within the data range and separates them into
+        historical and forecast knots. The function also prepares the historical and forecast
+        knots for basis functions and ensures there are enough knots for the spline basis.
 
-        Returns:
-        tuple: Contains various parameters calculated for historical and forecast data including:
-            - t (array): Combined knots for both historical and forecast data.
-            - k1 (int): Number of effective knots for historical data.
-            - k2 (int): Number of effective knots for forecast data.
-            - grid1 (array): Grid points for historical data.
-            - grid2 (array): Grid points for forecast data.
-            - knots1 (array): Knots for historical data.
-            - knots2 (array): Knots for forecast data.
+        Inputs:
+            k (int): Number of knots
+            forecast_ratio (float): Ratio of forecast data to total data
+            npoints (int): Number of points in the data
+            degree (int): Degree of the spline basis
 
-        Description:
-        This function splits the data into historical and forecast domains based on the forecast ratio.
-        It calculates separate sets of knots, grid points, and effective knot counts for both domains.
-        Raises an exception if the number of knots is too few based on the spline degree required.
+        Outputs:
+            t (numpy array): Combined knots for full basis
+            k1 (int): Number of historical knots
+            k2 (int): Number of forecast knots
+            grid1 (numpy array): Grid points for historical data
+            grid2 (numpy array): Grid points for forecast data
+            knots1 (numpy array): Historical knots
+            knots2 (numpy array): Forecast knots
         """
 
         # Calculate the starting index for the forecast based on the forecast ratio
@@ -278,6 +218,28 @@ class FunGCN(torch.nn.Module):
         return t, k1, k2, grid1, grid2, knots1, knots2
 
     def compute_gcn_embeddings(self, k, forecast_ratio=0., data=None, var_modality=None):
+        """
+        Compute GCN embeddings for a given dataset.
+
+        The function first checks if data and var_modality are provided, and if not, it uses the default values.
+        It then extracts the shape of the data and sets the degree of the spline basis to 3.
+        If forecast_ratio is greater than 0, it prepares the data for the forecast task by dividing the domain,
+        initializing variables, and computing the GCN embeddings for each feature.
+        If forecast_ratio is 0, it prepares the data for the regression/classification task by initializing variables
+        and computing the GCN embeddings for each feature.
+
+        Inputs:
+            k (int): Number of knots
+            forecast_ratio (float, optional): Ratio of forecast data to total data (default=0.)
+            data (numpy array, optional): Input data (default=None)
+            var_modality (list, optional): List of variable modalities (default=None)
+
+        Outputs:
+            X (numpy array): GCN embeddings
+            t (numpy array): Combined knots for full basis
+            k1 (int): Number of historical knots
+            k2 (int): Number of forecast knots
+        """
 
         if data is None:
             data = self.data
@@ -349,8 +311,18 @@ class FunGCN(torch.nn.Module):
     def update_embeddings(self, k_graph, k_gcn):
 
         """
-        Check when update embeddings is necessary
+        Update the embeddings for the graph and GCN models.
 
+        It updates the embeddings for the graph and GCN models if the input values are different from the current
+        values. It also prints some information about the updated embeddings if verbose is True and forecast_ratio
+        is greater than 0.
+
+        Inputs:
+            k_graph (int): Number of knots for graph embeddings
+            k_gcn (int): Number of knots for GCN embeddings
+
+        Outputs:
+            None
         """
 
         # embedding for graph
@@ -371,6 +343,22 @@ class FunGCN(torch.nn.Module):
             print('starting forecasting at', self.start_forecast)
 
     def split_data_train_validation_test(self, test_size=0., val_size=0., random_state=1):
+        """
+        Split the data into training, validation, and testing sets.
+
+        This function takes in three inputs: test_size, val_size, and random_state.
+        It splits the data into training, validation, and testing sets based on the input sizes.
+        It updates the training, validation, and testing indices and saves the corresponding data for the graph
+        and GCN models.
+
+        Inputs:
+            test_size (float, optional): Proportion of data to use for testing (default=0.)
+            val_size (float, optional): Proportion of data to use for validation (default=0.)
+            random_state (int, optional): Random seed for splitting data (default=1)
+
+        Outputs:
+            None
+        """
 
         # find all the indexes
         self.train_ind = np.arange(self.data.shape[1])
@@ -381,7 +369,8 @@ class FunGCN(torch.nn.Module):
 
         if test_size > 0:
             # update train ind and find test ind
-            self.train_ind, self.test_ind = train_test_split(self.train_ind, test_size=test_size, random_state=random_state)
+            self.train_ind, self.test_ind = train_test_split(self.train_ind, test_size=test_size,
+                                                             random_state=random_state)
 
             # save graph train
             self.X_graph_train = self.X_graph[:, self.train_ind, :]
@@ -391,15 +380,29 @@ class FunGCN(torch.nn.Module):
 
         if val_size > 0:
             # update train ind and find val ind
-            self.train_ind, self.val_ind = train_test_split(self.train_ind, test_size=val_size, random_state=random_state)
+            self.train_ind, self.val_ind = train_test_split(self.train_ind, test_size=val_size,
+                                                            random_state=random_state)
 
             # save gcn val
             self.X_gcn_val = X[:, self.val_ind, :]
 
         # save gcn train
         self.X_gcn_train = X[:, self.train_ind, :]
-    
+
     def standardize_data(self, test_size=0., val_size=0.):
+        """
+        Standardize the data and create torch tensors for the graph and GCN models.
+
+        It standardizes the data for the graph and GCN models using the standardize_X function.
+        It creates torch tensors for the standardized data and stores them in the object's attributes.
+
+        Inputs:
+            test_size (float, optional): Proportion of data to use for testing (default=0.)
+            val_size (float, optional): Proportion of data to use for validation (default=0.)
+
+        Outputs:
+            None
+        """
 
         # standardize and create torch tensor for graph
         self.X_graph_train, _, _ = self.standardize_X(self.X_graph_train)
@@ -410,8 +413,7 @@ class FunGCN(torch.nn.Module):
             self.X_gcn_test = torch.FloatTensor(self.X_gcn_test.transpose(1, 0, 2))
 
         if val_size > 0:
-
-            # you have to standardize train and val together, merge them:
+            # standardize train and val together, merge them:
             X_big = np.concatenate((self.X_gcn_train, self.X_gcn_val), 1)
             X_big, self.mean_vec_gcn, self.std_vec_gcn = self.standardize_X(X_big)
 
@@ -429,6 +431,19 @@ class FunGCN(torch.nn.Module):
             self.X_gcn_train = torch.FloatTensor(self.X_gcn_train.transpose(1, 0, 2))
 
     def isolate_target_from_data(self, k_gcn_in):
+        """
+        Isolate the target variable from the data for the GCN model.
+
+        It separates the target variable from the input data for the GCN model, depending on whether it's a forecast
+        task or a regression/classification task. It updates the X and y attributes for the training, validation,
+        and testing data.
+
+        Inputs:
+            k_gcn_in (int): Number of input knots for the GCN model
+
+        Outputs:
+            None
+        """
 
         # forecast task
         if self.forecast_ratio > 0:
@@ -465,6 +480,24 @@ class FunGCN(torch.nn.Module):
                 self.X_gcn_test[:, self.y_ind, :] = 0
 
     def preprocess_data(self, k_graph, k_gcn=None, forecast_ratio=0., test_size=0., val_size=0., random_state=None):
+        """
+        Preprocess the data for the GCN model.
+
+        It preprocesses the data by updating the embeddings, splitting the data into training, validation,
+        and testing sets, standardizing the data, and isolating the target variable.
+        It also checks for consistency in the input parameters and raises an exception if necessary.
+
+        Inputs:
+            k_graph (int): Number of knots for graph embeddings
+            k_gcn (int, optional): Number of knots for GCN embeddings (default=None)
+            forecast_ratio (float, optional): Ratio of forecast data to total data (default=0.)
+            test_size (float, optional): Proportion of data to use for testing (default=0.)
+            val_size (float, optional): Proportion of data to use for validation (default=0.)
+            random_state (int, optional): Random seed for splitting data (default=None)
+
+        Outputs:
+            None
+        """
 
         if self.verbose:
             print('')
@@ -495,6 +528,20 @@ class FunGCN(torch.nn.Module):
         self.isolate_target_from_data(k_gcn_in=self.k_gcn_in)
 
     def graph_estimation(self, max_selected=10, graph_path=None):
+        """
+        Estimate the graph structure using the FASTEN algorithm.
+
+        It estimates the graph structure by solving the FASTEN feature selection problem for each node variable.
+        It initializes the solver and parameters, and then iterates over each node variable to estimate the adjacency
+        matrix. It makes the adjacency matrix symmetric and upper triangular, and saves it to a file if specified.
+
+        Inputs:
+            max_selected (int, optional): Maximum number of selected features (default=10)
+            graph_path (str, optional): Path to save the estimated graph (default=None)
+
+        Outputs:
+            None
+        """
 
         # initialize solver and parameters
         solver = FASTEN()
@@ -561,32 +608,56 @@ class FunGCN(torch.nn.Module):
             np.savetxt(graph_path, adjacency_saved, fmt='%f', delimiter=',')
 
     def preprocess_adjacency_matrix(self, pruning=0.5):
-
         """
-        Symmetrically normalize adjacency matrix, create torch object, and extract edges information
+        Preprocess the adjacency matrix of a graph.
 
+        It takes the adjacency matrix of a graph, prunes it by removing edges with weights below a certain
+        threshold, adds self-loops to the matrix, normalizes the matrix, and extracts the edge weights and indices.
+
+        Inputs:
+            pruning (float, optional): the threshold for pruning edges (default: 0.5)
+
+        Outputs:
+            None
         """
+
+        # Create a copy of the original adjacency matrix
         norm_adj = self.adjacency.copy()
 
-        # prune matrix
+        # Prune the matrix by setting edges with weights less than the pruning threshold to 0
         norm_adj[norm_adj < pruning] = 0
 
-        # save n edges for each node
+        # Save the number of edges for each node
         self.nedges = (norm_adj > 0).sum(1)
 
+        # Add self-loops to the matrix (i.e., edges from each node to itself)
         norm_adj += np.identity(norm_adj.shape[0])
 
-        # normalize matrix
+        # Normalize the matrix by computing the degree of each node and applying it to the matrix
         degrees = np.power(np.array(norm_adj.sum(1)) + 1e-10, -0.5).ravel()
         degrees[np.isinf(degrees)] = 0.0
         D = np.diag(degrees)
         norm_adj = sp.coo_matrix((norm_adj @ D).T @ D)
 
-        # extract degrees, weights and index information
+        # Extract the edge weights, indices, and other information from the normalized matrix
         self.edge_weights = torch.FloatTensor(norm_adj.data)
         self.edge_index = torch.LongTensor(np.stack([norm_adj.row, norm_adj.col]))
 
     def initialize_gcn_model(self, pruning=0.5, nhid=None, dropout=0., kernel_size=0):
+        """
+        Initialize the GCN model.
+
+        It checks the number of edges for target nodes, and initializes the GCN model.
+
+        Inputs:
+            pruning (float, optional): the threshold for pruning edges (default: 0.5)
+            nhid (list, optional): the number of hidden units in the GCN model (default: [64, 32])
+            dropout (float, optional): the dropout rate for the GCN model (default: 0.)
+            kernel_size (int, optional): the kernel size for the GCN model (default: 0)
+
+        Outputs:
+            None
+        """
 
         if nhid is None:
             nhid = [64, 32]
@@ -601,7 +672,9 @@ class FunGCN(torch.nn.Module):
             print('Target nodes edges:', self.nedges[self.y_ind])
             print(' ')
             if min(self.nedges[self.y_ind]) == 0:
-                warnings.warn('WARNING: One or more target nodes have 0 edges: decrease pruning parameters or discard target', UserWarning)
+                warnings.warn(
+                    'WARNING: One or more target nodes have 0 edges: decrease pruning parameters or discard target',
+                    UserWarning)
 
         # initialize GCN model
         self.model = GCNModel(y_ind=self.y_ind, n_nodes=self.X_gcn_train.shape[1], edge_index=self.edge_index,
@@ -609,6 +682,21 @@ class FunGCN(torch.nn.Module):
                               nhid=nhid, dropout=dropout, kernel_size=kernel_size)
 
     def train_model(self, lr=0.005, epochs=100, batch_size=1, patience=5, min_delta=0.1):
+        """
+        Train the GCN model.
+
+        It trains the GCN model using the Adam optimizer and early stopping.
+
+        Inputs:
+            lr (float, optional): the learning rate for the Adam optimizer (default: 0.005)
+            epochs (int, optional): the number of epochs to train the model (default: 100)
+            batch_size (int, optional): the batch size for training (default: 1)
+            patience (int, optional): the patience for early stopping (default: 5)
+            min_delta (float, optional): the minimum delta for early stopping (default: 0.1)
+
+        Outputs:
+            None
+        """
 
         # call GCN model and stopper
         stopper = EarlyStopper(patience=patience, min_delta=min_delta)
@@ -688,10 +776,22 @@ class FunGCN(torch.nn.Module):
 
     def retrieve_original_form(self, y, X=None, basis_x=None, mean_vec_y=None, std_vec_y=None):
         """
-        function to pass from the estimated y in the coefficient form to the estimated y in the original space (os)
-        param: y --> y in the gcn_coefficient form: (nobs, nfeat, k_gcn_in)
-        """
+        Retrieve the original form of the data.
 
+        This function takes the output of the GCN model and transforms it back to the original form by reversing
+        the standardization and normalization steps. It also handles different types of variables, such as categorical,
+        scalar, and longitudinal variables, and applies specific transformations to each type.
+
+        Inputs:
+            y (numpy array): the output of the GCN model
+            X (numpy array, optional): the input data (default: None)
+            basis_x (numpy array, optional): the basis for the B-spline (default: None)
+            mean_vec_y (numpy array, optional): the mean vector for standardization (default: None)
+            std_vec_y (numpy array, optional): the standard deviation vector for standardization (default: None)
+
+        Outputs:
+            y_os (numpy array): the original form of the data
+        """
         basis_x = self.basis_gcn if basis_x is None else basis_x
         std_vec_y = self.std_vec_gcn[self.y_ind] if std_vec_y is None else std_vec_y
         mean_vec_y = self.mean_vec_gcn[self.y_ind] if mean_vec_y is None else mean_vec_y
@@ -753,7 +853,21 @@ class FunGCN(torch.nn.Module):
         return y_os
 
     def compute_evaluation_metrics(self, y_hat=None, y_true=None):
+        """
+        Compute evaluation metrics for the model.
 
+        This function computes the Root Mean Squared Error (RMSE), standardized RMSE, and accuracy
+        for each output variable.
+
+        Inputs:
+            y_hat (numpy array, optional): the predicted values (default: None)
+            y_true (numpy array, optional): the true values (default: None)
+
+        Outputs:
+            rmse_dict (dict): a dictionary containing the RMSE for each output variable
+            std_rmse_dict (dict): a dictionary containing the standardized RMSE for each output variable
+            accuracy_dict (dict): a dictionary containing the accuracy for each categorical output variable
+        """
         # initialize output dictionary
         rmse_dict, std_rmse_dict, accuracy_dict = {}, {}, {}
 
@@ -776,14 +890,20 @@ class FunGCN(torch.nn.Module):
         return rmse_dict, std_rmse_dict, accuracy_dict
 
     def predict(self, new_data=None, y_true=None):
-
         """
-        function to predict targets given new observation. If new data is None, it predicts the test observations.
+        Predict targets given new observations.
+
+        This function predicts targets given new observations. If new data is None, it predicts  the test observations.
         If y_true is given, it also computes the evaluation metrics.
-        :param X: new observations to predict in the form of X (nfeat, nobs, npoints)
-            For forecast, it contains just the past, so one has to compute embeddings using forecast_ratio=0.
-            For regression/classification task, the targets node should be filled with 0
-        :param y_true: true value of the predictions in the form of (nfeat[y_ind], nobs, npoints)
+
+        Inputs:
+            new_data (numpy array, optional): new observations to predict in the form of X (nfeat, nobs, npoints)
+                For forecast, it contains just the past, so one has to compute embeddings using forecast_ratio=0.
+                For regression/classification task, the targets node should be filled with 0
+            y_true (numpy array, optional): true value of the predictions in the form of (nfeat[y_ind], nobs, npoints)
+
+        Outputs:
+            OutputPrediction object containing the predicted values, evaluation metrics, and other relevant information
         """
 
         if new_data is None:
@@ -850,6 +970,21 @@ class FunGCN(torch.nn.Module):
             return OutputPrediction(y_hat_os, y_hat, rmse, std_rmse, accuracy)
 
     def print_prediction_metrics(self, rmse=None, std_rmse=None, accuracy=None, names_var=None):
+        """
+        Print prediction metrics.
+        This function prints the prediction metrics, including RMSE, standardized RMSE, and accuracy,
+        for each output variable.
+
+        Inputs:
+            rmse (dict, optional): the RMSE values for each output variable (default: None)
+            std_rmse (dict, optional): the standardized RMSE values for each output variable (default: None)
+            accuracy (dict, optional): the accuracy values for each output variable (default: None)
+            names_var (list, optional): the names of the output variables (default: None)
+
+        Outputs:
+            None
+        """
+
 
         rmse = rmse or self.rmse_test
         std_rmse = std_rmse or self.std_rmse_test
@@ -880,10 +1015,22 @@ class FunGCN(torch.nn.Module):
 
             print(pd.DataFrame(accuracy_values, columns=col_names, index=index_names))
 
-    def plot_true_vs_predicted(self, target_to_plot=0, curves_to_plot=range(0,10), plot_test=1, names_var=None):
-
+    def plot_true_vs_predicted(self, target_to_plot=0, curves_to_plot=range(0, 10), plot_test=1, names_var=None):
         """
-        this function plot the predicted curves vs the true ones. You cannot pass external inputs
+        Plot the predicted curves vs the true ones.
+
+        This function plots the predicted curves vs the true ones for a specific target variable and a set of curves.
+        It can plot either the test or train data.
+
+        Inputs:
+            target_to_plot (int, optional): the position of the element in the y_ind list that we want to plot
+                (default: 0)
+            curves_to_plot (range, optional): the range of curves to plot (default: range(0,10))
+            plot_test (int, optional): whether to plot the test data (1) or the train data (0) (default: 1)
+            names_var (list, optional): the names of the variables to plot (default: None)
+
+        Outputs:
+            None
         """
 
         # target to plot is the position of the element in the y_ind list that we want to plot
