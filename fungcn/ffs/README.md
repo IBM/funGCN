@@ -72,6 +72,9 @@ THE CODE FOLLOWS A NOTATION DIFFERENT FROM THE ONE OF THE PAPER. It follows the 
         
     :param wgts: individual weights for the penalty. 1 (default) or np.array with shape (n, 1)
     
+    :param fpc_features: an enum object of class FPCFeatures, it can be response or features. In the FF model, 
+        we can choose to use the response FPC as basis for the features, or each features can use its own FPC 
+    
     :param selection_criterion: an object of class SelectionCriteria, it can be CV, GCV, EBIC.
         The output of the fasten will contain the best model according to the chosen criterion.
         
@@ -106,7 +109,11 @@ THE CODE FOLLOWS A NOTATION DIFFERENT FROM THE ONE OF THE PAPER. It follows the 
                 first dimension: x_basis1 and x_basis2, second dimension: basis of each features, and it has to be:
                 x_basis1 = A_basis, x_basis2 = b_basis
             All other models: x_basis is an (n, neval, k) tensor
-            
+    
+    :param b_std if coefficient form is True, you have to standardize b before computing coefficients and pass the
+        standard deviation as input: you need it to reconstruct the final model coefficients (curves or surfaces) and
+        the predicted responses
+
     :param c_lam_vec: np.array to determine the path of lambdas. Default: np.geomspace(1, 0.01, num=100)
         If just one number, a single run is performed and the output is in best_models.single_run
         Different regression model and different alpha, may requires longer/shorter grid. We reccomend the
