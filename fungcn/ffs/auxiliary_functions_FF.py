@@ -79,7 +79,7 @@ class AuxiliaryFunctionsFF(AuxiliaryFunctionsFS):
     def compute_coefficients_form(self, A, b, k):
 
         """
-        compute coefficient form given the orginal matrices
+        compute coefficient form given the orginal matrices. FPC b are used for A
 
         """
 
@@ -100,22 +100,42 @@ class AuxiliaryFunctionsFF(AuxiliaryFunctionsFS):
         b = b @ b_basis
         A = (A @ b_basis).transpose(1, 0, 2).reshape(m, n * k)
 
-        # A_coeffs = np.zeros((n, m, k))
-        # A_basis = np.zeros((n, A.shape[2], k))
-        # # k_suggested = -1
-        # # var_exp = 0
-        # for i in tqdm(range(n)):
-        #     eigvals, eigenfuns = LA.eigh(A[i, :, :].T @ A[i, :, :])
-        #     # var_exp += np.cumsum(np.flip(eigvals)) / np.sum(eigvals)
-        #     A_basis[i, :, :] = eigenfuns[:, -k:]
-        #     A_coeffs[i, :, :] = A[i, :, :] @ A_basis[i, :, :]
-        # # var_exp = var_exp / n
-        # x_basis = np.zeros((2, n, A.shape[2], k))
-        # A = A_coeffs.transpose(1, 0, 2).reshape(m, n * k)
-        # x_basis[0, :, :, :] = A_basis
-        # for i in range(n):
-        #     x_basis[1, i, :, :] = b_basis
-        # b = b @ b_basis
+        return A, b, k, k_suggested, b_basis_full, x_basis, var_exp
+
+    def compute_coefficients_form_using_FPC_features(self, A, b, k):
+
+        """
+        compute coefficient form given the orginal matrices. Each feature uses its own FPC
+
+        """
+
+        n, m, _ = A.shape
+
+        # find b basis and k
+        eigvals, b_basis_full = LA.eigh(b.T @ b)
+        var_exp = np.cumsum(np.flip(eigvals)) / np.sum(eigvals)
+        k_suggested = max(np.argwhere(var_exp > 0.9)[0][0] + 1, 3)
+        if not k:
+            k = k_suggested
+        b_basis = b_basis_full[:, -k:]
+
+        # find A basis
+        A_coeffs = np.zeros((n, m, k))
+        A_basis = np.zeros((n, A.shape[2], k))
+
+        for i in range(n):
+            eigvals, eigenfuns = LA.eigh(A[i, :, :].T @ A[i, :, :])
+            A_basis[i, :, :] = eigenfuns[:, -k:]
+            A_coeffs[i, :, :] = A[i, :, :] @ A_basis[i, :, :]
+
+        # define X basis
+        x_basis = np.zeros((2, n, A.shape[2], k))
+        x_basis[0, :, :, :] = A_basis
+        x_basis[1, :, :, :] = np.tile(b_basis, (n, 1, 1))
+
+        # find b and A projections
+        A = A_coeffs.transpose(1, 0, 2).reshape(m, n * k)
+        b = b @ b_basis
 
         return A, b, k, k_suggested, b_basis_full, x_basis, var_exp
 

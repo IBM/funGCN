@@ -136,7 +136,7 @@ if __name__ == '__main__':
         A=A, b=b, k=k, wgts=wgts,
         selection_criterion=selection_criterion, n_folds=n_folds,
         adaptive_scheme=adaptive_scheme,
-        coefficients_form=False, x_basis=None,
+        coefficients_form=False, x_basis=None, b_std=None,
         c_lam_vec=c_lam_vec, c_lam_vec_adaptive=c_lam_vec_adaptive,
         max_selected=max_selected, check_selection_criterion=check_selection_criterion,
         alpha=alpha, lam1_max=None,

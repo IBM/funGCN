@@ -985,7 +985,6 @@ class FunGCN(torch.nn.Module):
             None
         """
 
-
         rmse = rmse or self.rmse_test
         std_rmse = std_rmse or self.std_rmse_test
         accuracy = accuracy or self.accuracy_test

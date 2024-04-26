@@ -21,6 +21,8 @@
         FS: min(5, more than 99% of response variability)
         SF: k = 5
     :param wgts: individual weights for the penalty. 1 (default) or np.array with shape (n, 1)
+    :param use_bFPC_for_A: just for the FF model, if True FPC of b are used also for A. If False each feature uses its
+        own FPC
     :param selection_criterion: an object of class SelectionCriteria, it can be CV, GCV, EBIC.
         The output of the fungcn will contain the best model according to the chosen criterion.
     :param n_folds: if selection_criterion is CV, number of folds to compute it. Default = 10
@@ -51,6 +53,9 @@
                 first dimension: x_basis1 and x_basis2, second dimension: basis of each features, and it has to be:
                 x_basis1 = A_basis, x_basis2 = b_basis
             All other models: x_basis is an (n, neval, k) tensor
+    :param b_std if coefficient form is True, you have to standardize b before computing coefficients and pass the
+        standard deviation as input: you need it to reconstruct the final model coefficients (curves or surfaces) and
+        the predicted responses
     :param c_lam_vec: np.array to determine the path of lambdas. Default: np.geomspace(1, 0.01, num=100)
         If just one number, a single run is performed and the output is in best_models.single_run
         Different regression model and different alpha, may requires longer/shorter grid. We reccomend the
@@ -167,7 +172,7 @@ from sklearn.model_selection import KFold
 from fungcn.ffs.solver_FF import SolverFF
 from fungcn.ffs.solver_SF import SolverSF
 from fungcn.ffs.solver_FS import SolverFS
-from fungcn.ffs.enum_classes import RegressionType, SelectionCriteria, AdaptiveScheme
+from fungcn.ffs.enum_classes import RegressionType, SelectionCriteria, AdaptiveScheme, FPCFeatures
 from fungcn.ffs.output_classes import OutputPath, OutputPathCore
 from fungcn.ffs.auxiliary_functions_FS import AuxiliaryFunctionsFS
 from fungcn.ffs.auxiliary_functions_FF import AuxiliaryFunctionsFF
@@ -451,8 +456,8 @@ class FASTEN:
     def solver(self, regression_type,
                A, b, k=None, wgts=1,
                selection_criterion=SelectionCriteria.GCV, n_folds=10,
-               adaptive_scheme=AdaptiveScheme.SOFT,
-               coefficients_form=False, x_basis=None,
+               adaptive_scheme=AdaptiveScheme.SOFT, fpc_features=FPCFeatures.response,
+               coefficients_form=False, x_basis=None, b_std=None,
                c_lam_vec=None, c_lam_vec_adaptive=None,
                max_selected=None, check_selection_criterion=False,
                alpha=0.2, lam1_max=None,
@@ -511,7 +516,7 @@ class FASTEN:
 
             return -1
 
-        b_std = np.array([1])  # we need to define b_sdt if coefficients form
+        # b_std = np.array([1])  # we need to define b_sdt if coefficients form
         A_full, b_full, b_basis_full = None, None, None  # define variables if not coefficient forms
 
         if not coefficients_form:
@@ -529,9 +534,17 @@ class FASTEN:
             if select_k_estimation:
                 A_full, b_full = np.copy(A), np.copy(b)
 
-            A, b, k, k_suggested, b_basis_full, x_basis, var_exp = af.compute_coefficients_form(A, b, k)
+            if regression_type == RegressionType.FF and fpc_features == FPCFeatures.features:
+                A, b, k, k_suggested, b_basis_full, x_basis, var_exp = af.compute_coefficients_form_using_FPC_features(A, b, k)
+
+            else:
+                A, b, k, k_suggested, b_basis_full, x_basis, var_exp = af.compute_coefficients_form(A, b, k)
 
         else:
+
+            if b_std is None:
+                raise Exception('If coefficient form is true, you have to standardize the response before computing '
+                                'the coefficients and pass the standard deviation as input')
 
             k_suggested = -1
             var_exp = None

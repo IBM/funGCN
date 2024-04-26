@@ -42,7 +42,7 @@ class OutputSolverCore:
 class OutputSolver:
 
     """
-    Definition of the output class for fungcn
+    Definition of the output class for single (best) model FASTEN
 
     """
 
@@ -94,7 +94,7 @@ class OutputPathCore:
 class OutputPath:
 
     """
-    Definition of the output class for solver_path
+    Definition of the output class for FASTEN solver
 
     """
 

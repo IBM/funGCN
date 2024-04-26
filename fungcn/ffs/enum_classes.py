@@ -17,8 +17,11 @@ Definition of classes needed to specify the problem:
     class AdaptiveScheme: definition of the adaptive scheme
         NONE = No adaptive scheme is performed
         SOFT = The adaptive step is performed just on the optimal value of lambda
-        FULL = a new path is investigated starting from the weights obtained at the previous path
+        FULL = a new path is investigated starting from the weights obtained at the previous path\
 
+    class FPCFeatures:
+        response = FPC of b are used for the features
+        features = each feature uses itw own FPC
 """
 
 import enum
@@ -61,3 +64,14 @@ class AdaptiveScheme(enum.Enum):
     NONE = 1
     FULL = 2
     SOFT = 3
+
+
+class FPCFeatures(enum.Enum):
+
+    """
+    Definition of the class to select FPC for the features
+
+    """
+
+    features = 1
+    response = 2
