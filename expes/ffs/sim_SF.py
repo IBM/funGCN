@@ -20,7 +20,7 @@ if __name__ == '__main__':
     # ------------------------ #
 
     regression_type = RegressionType.SF  # FF, FS, SF
-    GenSim = GenerateSimSF(seed)
+    gen_sim = GenerateSimSF(seed)
     af = AuxiliaryFunctionsSF()
 
     selection_criterion = SelectionCriteria.CV  # CV, GCV, or EBIC
@@ -105,13 +105,13 @@ if __name__ == '__main__':
     grid = np.linspace(domain[0], domain[1], neval)
 
     # generate design matrix A
-    A = GenSim.generate_A(n, m, grid, mu_A, sd_A, l_A, nu_A)
+    A = gen_sim.generate_A(n, m, grid, mu_A, sd_A, l_A, nu_A)
 
     # generate coefficient matrix x
-    x_true = GenSim.generate_x(not0, grid, sd_x, mu_x, l_x, nu_x)
+    x_true = gen_sim.generate_x(not0, grid, sd_x, mu_x, l_x, nu_x)
 
     # compute errors and response
-    b, eps = GenSim.compute_b_plus_eps(A, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
+    b, eps = gen_sim.compute_b_plus_eps(A, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
 
     # --------------- #
     #  standardize A  #

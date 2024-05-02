@@ -16,7 +16,7 @@ if __name__ == '__main__':
     seed = 54
     # seed = 218359804
     # seed = np.random.randint(1, 2 ** 30, 1)
-    GenSim = GenerateSimLogit(seed)
+    gen_sim = GenerateSimLogit(seed)
     print(' seed = ', seed)
 
     # simulation type
@@ -80,14 +80,14 @@ if __name__ == '__main__':
     print_lev = 1  # decide level of printing
 
     # generate design matrix A
-    A, A_test = GenSim.generate_A(n, m, grid, mu_A, sd_A, l_A, nu_A, test=True)
+    A, A_test = gen_sim.generate_A(n, m, grid, mu_A, sd_A, l_A, nu_A, test=True)
 
     # generate coefficient matrix x
-    x_true = GenSim.generate_x(not0, grid, sd_x, mu_x, l_x, nu_x)
+    x_true = gen_sim.generate_x(not0, grid, sd_x, mu_x, l_x, nu_x)
 
     # compute errors and response
-    b, eps = GenSim.compute_b_plus_eps(A, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
-    b_test, eps_test = GenSim.compute_b_plus_eps(A_test, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
+    b, eps = gen_sim.compute_b_plus_eps(A, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
+    b_test, eps_test = gen_sim.compute_b_plus_eps(A_test, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
 
     # standardize A
     A = af.standardize_design_matrix(A)

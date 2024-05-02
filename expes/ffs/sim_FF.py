@@ -14,22 +14,22 @@ if __name__ == '__main__':
 
     # seed = np.random.randint(1, 2**30, 1)
     # np.random.seed(seed)
-    seed = 10
+    seed = 55
 
     # ------------------------ #
     #  choose simulation type  #
     # ------------------------ #
 
     regression_type = RegressionType.FF  # FF, FS, SF
-    GenSim = GenerateSimFF(seed)
+    gen_sim = GenerateSimFF(seed)
     af = AuxiliaryFunctionsFF()
-    fpc_features = FPCFeatures.features
+    fpc_features = FPCFeatures.response  # features, response
 
-    selection_criterion = SelectionCriteria.GCV  # CV, GCV, or EBIC
+    selection_criterion = SelectionCriteria.CV  # CV, GCV, or EBIC
     n_folds = 5  # number of folds if cv is performed
     adaptive_scheme = AdaptiveScheme.FULL  # type of adaptive scheme: FULL, SOFT, NONE
 
-    easy_x = True  # if the features are easy or complex to estimate
+    easy_x = False  # if the features are easy or complex to estimate
     relaxed_criteria = True  # if True a linear regression is fitted on the features to select the best lambda
     relaxed_estimates = True  # if True a linear regression is fitted on the features before returning them
     select_k_estimation = True  # if True we allow k to change k for estimation (chosen based on CV)
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # ----------------------------- #
 
     m = 300  # number of samples
-    n = 2000  # number of features
+    n = 500  # number of features
     not0 = 5  # number of non 0 features
 
     domain = np.array([0, 1])  # domains of the curves
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     #  set fungcn parameters  #
     # ----------------------- #
 
-    k = None  # number of FPC scores, if None automatically selected
+    k = 3  # number of FPC scores, if None automatically selected 0.048 0.039
 
     # c_lam_vec = 0.3  # if we chose to run for just one value of lam1 = lam1 = c_lam * lam1_max
     c_lam_vec = np.geomspace(1, 0.01, num=100)  # grid of lam1 to explore, lam1 = c_lam * lam1_max
@@ -109,14 +109,14 @@ if __name__ == '__main__':
     grid_expanded = np.outer(grid, np.ones(neval))
 
     # generate design matrix A
-    A, A_test = GenSim.generate_A(n, m, grid, mu_A, sd_A, l_A, nu_A, test=True)
+    A, A_test = gen_sim.generate_A(n, m, grid, mu_A, sd_A, l_A, nu_A, test=True)
 
     # generate coefficient matrix x
-    x_true = GenSim.generate_x(not0, grid, x_npeaks_set, x_sd_min, x_sd_max, x_range)
+    x_true = gen_sim.generate_x(not0, grid, x_npeaks_set, x_sd_min, x_sd_max, x_range)
 
     # compute errors and response
-    b, eps = GenSim.compute_b_plus_eps(A, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
-    b_test, eps_test = GenSim.compute_b_plus_eps(A_test, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
+    b, eps = gen_sim.compute_b_plus_eps(A, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
+    b_test, eps_test = gen_sim.compute_b_plus_eps(A_test, x_true, not0, grid, snr, mu_eps, l_eps, nu_eps)
 
     # --------------- #
     #  standardize A  #
