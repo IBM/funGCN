@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # seed = np.random.randint(1, 2**30, 1)
     # np.random.seed(seed)
-    seed = 55
+    seed = 10
 
     # ------------------------ #
     #  choose simulation type  #
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     n_folds = 5  # number of folds if cv is performed
     adaptive_scheme = AdaptiveScheme.FULL  # type of adaptive scheme: FULL, SOFT, NONE
 
-    easy_x = False  # if the features are easy or complex to estimate
+    easy_x = True  # if the features are easy or complex to estimate
     relaxed_criteria = True  # if True a linear regression is fitted on the features to select the best lambda
     relaxed_estimates = True  # if True a linear regression is fitted on the features before returning them
     select_k_estimation = True  # if True we allow k to change k for estimation (chosen based on CV)
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     #  set fungcn parameters  #
     # ----------------------- #
 
-    k = 3  # number of FPC scores, if None automatically selected 0.048 0.039
+    k = None  # number of FPC scores, if None automatically selected 0.048 0.039
 
     # c_lam_vec = 0.3  # if we chose to run for just one value of lam1 = lam1 = c_lam * lam1_max
     c_lam_vec = np.geomspace(1, 0.01, num=100)  # grid of lam1 to explore, lam1 = c_lam * lam1_max
