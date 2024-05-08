@@ -7,7 +7,6 @@ code to test fgcn on synthetic data
 
 import torch
 import numpy as np
-import time
 from fungcn.fgcn.solver_fgcn import FunGCN
 from fungcn.fgcn.generate_sim_fgcn import GenerateSimFGCN
 import os
@@ -32,7 +31,6 @@ if __name__ == '__main__':
     # sim parameters
     nobs = 300
     nvar = 500
-
 
     # simulation parameters
     nfun0 = 4  # number of correlated functional variables
@@ -89,9 +87,6 @@ if __name__ == '__main__':
     X, var_modality = gen_sim.get_design_matrix()
     # np.savetxt('kg_share/modalities.txt', var_modality, fmt='%s', delimiter=',')
 
-    # start Model
-    start = time.time()
-
     # initialize functional gcn object
     fun_gcn = FunGCN(data=X, y_ind=y_ind, var_modality=var_modality, verbose=1)
 
@@ -101,9 +96,6 @@ if __name__ == '__main__':
 
     # create graph
     fun_gcn.graph_estimation(max_selected=max_selected, graph_path=save_graph_name)
-
-    # end time graph
-    cpu_time_kg = time.time() - start
 
     # initialize GCN model
     fun_gcn.initialize_gcn_model(pruning=pruning, nhid=nhid, dropout=dropout, kernel_size=kernel_size)
@@ -117,7 +109,7 @@ if __name__ == '__main__':
     # print prediction metrics
     fun_gcn.print_prediction_metrics()
 
-    # # plot a sample of the estimated curve
+    # plot a sample of the estimated curve
     fun_gcn.plot_true_vs_predicted(target_to_plot=0, curves_to_plot=range(0, 30), plot_test=1)
 
 
