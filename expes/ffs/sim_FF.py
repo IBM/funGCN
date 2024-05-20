@@ -32,7 +32,7 @@ if __name__ == '__main__':
     easy_x = True  # if the features are easy or complex to estimate
     relaxed_criteria = True  # if True a linear regression is fitted on the features to select the best lambda
     relaxed_estimates = True  # if True a linear regression is fitted on the features before returning them
-    select_k_estimation = True  # if True we allow k to change k for estimation (chosen based on CV)
+    select_k_estimation = False  # if True we allow k to change k for estimation (chosen based on CV)
 
     # ----------------------------- #
     #  other simulation parameters  #

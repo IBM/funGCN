@@ -19,12 +19,12 @@ class GCNModel(torch.nn.Module):
         dim_input (int): Dimensionality of input node features
         dim_output (int): Dimensionality of output node features
         nhid (list): List of hidden dimensions for GCN layers
-        kernel_size (int): Kernel size for Conv2d layer (default=2)
+        kernel_size (int): Kernel size for Conv2d layer (default=0)
         dropout (float): Dropout rate (default=0.)
 
     """
 
-    def __init__(self, y_ind, n_nodes, edge_index, edge_weights, dim_input, dim_output, nhid, kernel_size=2, dropout=0.):
+    def __init__(self, y_ind, n_nodes, edge_index, edge_weights, dim_input, dim_output, nhid, kernel_size=0, dropout=0.):
         super().__init__()
 
         n_y = len(y_ind)
