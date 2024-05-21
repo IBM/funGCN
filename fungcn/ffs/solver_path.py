@@ -762,6 +762,7 @@ class FASTEN:
 
             best_model.r_no_adaptive = best_model.r
             best_model.r = best_model_adaptive.r
+            best_model.selection_criterion_value = best_model_adaptive.selection_criterion_value
             indx_prev = np.copy(best_model.indx)
             best_model.indx[np.where(best_model.indx * 1 > 0)] = best_model_adaptive.indx  # update original index
 
