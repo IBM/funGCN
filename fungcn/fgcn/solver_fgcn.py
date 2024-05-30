@@ -565,6 +565,7 @@ class FunGCN(torch.nn.Module):
             if self.var_modality[i] == 'f' or self.var_modality[i] == 'c':
                 regression_type = RegressionType.FF
                 y_i = self.X_graph_train[i, :, :]
+                y_i_std = y_i.std(axis=0)
                 # print(self.basis_graph.shape)
                 # basis_i = np.delete(self.basis_graph, i, 1)
                 basis_i = self.basis_graph.copy()
@@ -574,7 +575,8 @@ class FunGCN(torch.nn.Module):
                 regression_type = RegressionType.SF
                 y_i = self.X_graph_train[i, :, 0]
                 # standardize scalar response
-                y_i = (y_i - y_i.mean()) / (y_i.std() + 1e-32)
+                y_i_std = y_i.std()
+                y_i = (y_i - y_i.mean()) / (y_i_std + 1e-32)
                 # basis_i = np.delete(self.basis_graph, i, 0)
                 basis_i = self.basis_graph.copy()
 
@@ -586,7 +588,7 @@ class FunGCN(torch.nn.Module):
                 A=X_i, b=y_i, k=k, wgts=1,
                 selection_criterion=SelectionCriteria.EBIC, n_folds=10,
                 adaptive_scheme=AdaptiveScheme.NONE,
-                coefficients_form=True, x_basis=basis_i,
+                coefficients_form=True, x_basis=basis_i, b_std=y_i_std,
                 c_lam_vec=np.geomspace(1, 0.005, num=100),
                 c_lam_vec_adaptive=None,
                 max_selected=max_selected, check_selection_criterion=False,
