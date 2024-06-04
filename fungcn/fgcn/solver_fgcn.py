@@ -965,6 +965,8 @@ class FunGCN(torch.nn.Module):
                 if len(accuracy) > 0:
                     print(' ACCURACY:', sum(accuracy.values())/len(accuracy))
 
+            self.rmse_test, self.std_rmse_test, self.accuracy_test = rmse, std_rmse, accuracy
+
         if new_data is None:
             self.y_test_hat_os, self.y_test_hat_embedded = y_hat_os, y_hat
             self.rmse_test, self.std_rmse_test, self.accuracy_test = rmse, std_rmse, accuracy
