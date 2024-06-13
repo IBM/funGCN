@@ -65,14 +65,14 @@ if __name__ == '__main__':
     c_lam_vec = np.geomspace(1, 0.01, num=100)  # grid of lam1 to explore, lam1 = c_lam * lam1_max
     c_lam_vec_adaptive = np.geomspace(1, 0.0001, num=50)  # grid of lam1 to explore in the adaptive FULL path
 
-    max_selected = max(50, 2 * not0)  # max number of selected features
+    max_selected = 50  # max number of selected features
     # max_selected = 100
     check_selection_criterion = True  # if True and the selection criterion has a discontinuity, we stop the search
 
     wgts = np.ones((n, 1))  # individual penalty weights
     alpha = 0.2  # lam2 = (1-alpha) * c_lam * lam1_max
 
-    sgm = not0 / n  # starting value of sigma
+    sgm = 0.001  # starting value of sigma
     sgm_increase = 5  # sigma increasing factor
     sgm_change = 1  # number of iteration that we wait before increasing sigma
 

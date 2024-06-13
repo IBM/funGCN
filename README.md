@@ -60,7 +60,7 @@ The implemented methodology is described in the following papers:
     
 ### REQUIREMENTS
 
-1) Create a python3.11 environment: `conda create -n my_env python=3.11`
+1) Create a python3.11 environment: `conda create -n my_env python=3.12`
 2) clone funGCN (main branch)
 3) install funGCN and required packages by running `pip install -e .` 
 at the root of the repository, i.e. where the setup.py file is.
